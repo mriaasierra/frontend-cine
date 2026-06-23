@@ -13,44 +13,69 @@ function RoomForm({ room, onSubmit, onCancel }) {
     room_type: room?.room_type || '2D',
     room_status: room?.room_status || 'Disponible'
   })
+  const [errors, setErrors] = useState({})
+
+  const validate = () => {
+    const tempErrors = {}
+    if (!formData.room_number || Number(formData.room_number) <= 0) {
+      tempErrors.room_number = 'Número de sala inválido'
+    }
+    if (!formData.total_capacity || Number(formData.total_capacity) <= 0) {
+      tempErrors.total_capacity = 'La capacidad debe ser mayor a 0'
+    }
+    setErrors(tempErrors)
+    return Object.keys(tempErrors).length === 0
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    if (validate()) {
+      onSubmit({
+        ...formData,
+        room_number: Number(formData.room_number).toString(),
+        total_capacity: Number(formData.total_capacity)
+      })
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 text-slate-100">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Número de Sala</label>
+          <label className="block text-sm font-medium text-slate-400 mb-1">Número de Sala</label>
           <input
             type="number"
             value={formData.room_number}
-            onChange={(e) => setFormData({ ...formData, room_number: parseInt(e.target.value) })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
+            className={`w-full px-3 py-2 bg-slate-950 border rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm ${
+              errors.room_number ? 'border-red-500' : 'border-slate-800'
+            }`}
             required
           />
+          {errors.room_number && <p className="text-xs text-red-500 mt-1">{errors.room_number}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Capacidad Total</label>
+          <label className="block text-sm font-medium text-slate-400 mb-1">Capacidad Total</label>
           <input
             type="number"
             value={formData.total_capacity}
-            onChange={(e) => setFormData({ ...formData, total_capacity: parseInt(e.target.value) })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => setFormData({ ...formData, total_capacity: e.target.value })}
+            className={`w-full px-3 py-2 bg-slate-955 border rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm ${
+              errors.total_capacity ? 'border-red-500' : 'border-slate-800'
+            }`.replace('bg-slate-955', 'bg-slate-950')}
             required
           />
+          {errors.total_capacity && <p className="text-xs text-red-500 mt-1">{errors.total_capacity}</p>}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Sala</label>
+          <label className="block text-sm font-medium text-slate-400 mb-1">Tipo de Sala</label>
           <select
             value={formData.room_type}
             onChange={(e) => setFormData({ ...formData, room_type: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm cursor-pointer"
           >
             <option value="2D">2D</option>
             <option value="3D">3D</option>
@@ -59,11 +84,11 @@ function RoomForm({ room, onSubmit, onCancel }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+          <label className="block text-sm font-medium text-slate-400 mb-1">Estado</label>
           <select
             value={formData.room_status}
             onChange={(e) => setFormData({ ...formData, room_status: e.target.value })}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm cursor-pointer"
           >
             <option value="Disponible">Disponible</option>
             <option value="Mantenimiento">Mantenimiento</option>
@@ -72,17 +97,17 @@ function RoomForm({ room, onSubmit, onCancel }) {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="flex justify-end gap-3 pt-4 border-t border-slate-800/60 mt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="px-4 py-2 text-slate-400 hover:bg-slate-800 rounded-xl transition-colors text-sm font-semibold"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-5 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/10 transition-all active:scale-[0.98]"
         >
           {room ? 'Actualizar' : 'Crear Sala'}
         </button>
@@ -100,14 +125,13 @@ export default function Salas() {
   const { success, error } = useToast()
 
   useEffect(() => {
-    // TODO: Connect to backend endpoint: GET /api/rooms
     fetchRooms()
   }, [])
 
   const fetchRooms = async () => {
     try {
       const data = await roomsApi.getAll()
-      setRooms(data)
+      setRooms(data || [])
     } catch (err) {
       error('Error al cargar salas')
     } finally {
@@ -117,7 +141,6 @@ export default function Salas() {
 
   const handleCreate = async (formData) => {
     try {
-      // TODO: Connect to backend endpoint: POST /api/rooms
       const newRoom = await roomsApi.create(formData)
       setRooms([...rooms, newRoom])
       setIsModalOpen(false)
@@ -129,7 +152,6 @@ export default function Salas() {
 
   const handleUpdate = async (formData) => {
     try {
-      // TODO: Connect to backend endpoint: PUT /api/rooms/:id
       await roomsApi.update(editingRoom.room_id, formData)
       setRooms(rooms.map(r => r.room_id === editingRoom.room_id ? { ...r, ...formData } : r))
       setIsModalOpen(false)
@@ -143,7 +165,6 @@ export default function Salas() {
   const handleDelete = async (id) => {
     if (!confirm('¿Está seguro de eliminar esta sala?')) return
     try {
-      // TODO: Connect to backend endpoint: DELETE /api/rooms/:id
       await roomsApi.delete(id)
       setRooms(rooms.filter(r => r.room_id !== id))
       success('Sala eliminada exitosamente')
@@ -157,37 +178,37 @@ export default function Salas() {
   )
 
   const statusColors = {
-    'Disponible': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'Mantenimiento': 'bg-amber-100 text-amber-700 border-amber-200',
-    'Fuera de servicio': 'bg-red-100 text-red-700 border-red-200'
+    'Disponible': 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/40',
+    'Mantenimiento': 'bg-amber-950/40 text-amber-400 border border-amber-900/40',
+    'Fuera de servicio': 'bg-red-950/40 text-red-400 border border-red-900/40'
   }
 
   const typeColors = {
-    '2D': 'bg-slate-700',
-    '3D': 'bg-blue-600',
-    'VIP': 'bg-amber-500',
-    'IMAX': 'bg-red-600'
+    '2D': 'bg-slate-800 border-slate-700',
+    '3D': 'bg-blue-600 border-blue-500',
+    'VIP': 'bg-gradient-to-r from-amber-500 to-yellow-600 border-amber-500',
+    'IMAX': 'bg-red-600 border-red-500'
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Salas</h1>
-          <p className="text-slate-500">Gestión de salas de proyección</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Salas</h1>
+          <p className="text-sm text-slate-400 mt-1">Gestión de salas de proyección y tipos de sala</p>
         </div>
         <button
           onClick={() => { setEditingRoom(null); setIsModalOpen(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-xl shadow-lg shadow-blue-500/10 active:scale-[0.98] transition-all font-semibold"
         >
           <Plus className="w-5 h-5" />
           Nueva Sala
@@ -196,72 +217,80 @@ export default function Salas() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Search className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
         <input
           type="text"
           placeholder="Buscar salas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-sm"
         />
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRooms.map(room => (
-          <div 
-            key={room.room_id} 
-            className={`bg-white rounded-xl shadow-sm border overflow-hidden ${
-              room.room_status !== 'Disponible' ? 'opacity-75' : ''
-            }`}
-          >
-            <div className={`h-2 ${typeColors[room.room_type]}`} />
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 ${typeColors[room.room_type]} rounded-xl flex items-center justify-center`}>
-                    <MonitorPlay className="w-6 h-6 text-white" />
+      {filteredRooms.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredRooms.map(room => (
+            <div 
+              key={room.room_id} 
+              className={`bg-slate-900 rounded-2xl border border-slate-805 overflow-hidden group hover:border-slate-700/60 shadow-lg transition-all ${
+                room.room_status !== 'Disponible' ? 'opacity-75' : ''
+              }`}
+            >
+              <div className={`h-1.5 ${typeColors[room.room_type] || 'bg-slate-800'}`} />
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-slate-950 border border-slate-850 rounded-xl flex items-center justify-center">
+                      <MonitorPlay className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-xl text-white">Sala {room.room_number}</h3>
+                      <span className={`inline-block px-2 py-0.5 rounded text-xxs font-bold uppercase mt-1 ${statusColors[room.room_status] || 'bg-slate-800 text-slate-400'}`}>
+                        {room.room_status}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-xl text-slate-800">Sala {room.room_number}</h3>
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusColors[room.room_status]}`}>
-                      {room.room_status}
-                    </span>
+                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => { setEditingRoom(room); setIsModalOpen(true) }}
+                      className="p-2 bg-slate-950/40 border border-slate-800/60 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                      title="Editar sala"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(room.room_id)}
+                      className="p-2 bg-red-950/30 border border-red-900/30 text-red-400 hover:text-white hover:bg-red-900/80 rounded-lg transition-colors"
+                      title="Eliminar sala"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => { setEditingRoom(room); setIsModalOpen(true) }}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(room.room_id)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <p className="text-xs text-slate-500 mb-1">Tipo</p>
-                  <p className="font-semibold text-slate-800">{room.room_type}</p>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3">
-                  <div className="flex items-center gap-1 text-xs text-slate-500 mb-1">
-                    <Users className="w-3 h-3" />
-                    Capacidad
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800/60 mt-2">
+                  <div className="bg-slate-950 border border-slate-850 rounded-xl p-3">
+                    <p className="text-xxs text-slate-500 font-bold uppercase mb-1">Tipo</p>
+                    <p className="font-semibold text-slate-200 text-sm">{room.room_type}</p>
                   </div>
-                  <p className="font-semibold text-slate-800">{room.total_capacity} asientos</p>
+                  <div className="bg-slate-950 border border-slate-850 rounded-xl p-3">
+                    <div className="flex items-center gap-1 text-xxs text-slate-500 font-bold uppercase mb-1">
+                      <Users className="w-3.5 h-3.5" />
+                      Capacidad
+                    </div>
+                    <p className="font-semibold text-slate-200 text-sm">{room.total_capacity} asientos</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-slate-900/40 border border-slate-800 border-dashed rounded-2xl">
+          <p className="text-slate-400">No se encontraron salas para los criterios especificados.</p>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
@@ -278,3 +307,4 @@ export default function Salas() {
     </div>
   )
 }
+

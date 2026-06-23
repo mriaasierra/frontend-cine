@@ -126,7 +126,17 @@ export default function Peliculas() {
   const [movies, setMovies] = useState([])
   const [genres, setGenres] = useState([])
   const [loading, setLoading] = useState(true)
+  
+  // Pagination & Filtering state
+  const [page, setPage] = useState(1)
+  const [limit] = useState(8)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedGenre, setSelectedGenre] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('todos')
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingMovie, setEditingMovie] = useState(null)
   const { success, error } = useToast()
@@ -134,16 +144,40 @@ export default function Peliculas() {
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [page, selectedGenre, selectedStatus])
+
+  // Simple debounce logic or direct fetch on search input submit/blur. Let's trigger fetch on dependencies or run it directly.
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchData()
+    }, 300)
+    return () => clearTimeout(delayDebounce)
+  }, [searchTerm])
 
   const fetchData = async () => {
     try {
-      const [moviesData, genresData] = await Promise.all([
-        moviesApi.getAll(),
+      setLoading(true)
+      const [moviesRes, genresData] = await Promise.all([
+        moviesApi.getAll({
+          page,
+          limit,
+          genre_id: selectedGenre || undefined,
+          status: selectedStatus || undefined,
+          search: searchTerm || undefined
+        }),
         genresApi.getAll()
       ])
-      setMovies(moviesData)
-      setGenres(genresData)
+      
+      if (moviesRes && moviesRes.data) {
+        setMovies(moviesRes.data)
+        setTotal(moviesRes.pagination.total)
+        setTotalPages(moviesRes.pagination.totalPages)
+      } else {
+        setMovies(moviesRes || [])
+        setTotal(moviesRes?.length || 0)
+        setTotalPages(1)
+      }
+      setGenres(genresData || [])
     } catch (err) {
       error('Error al cargar datos del servidor')
     } finally {
@@ -153,11 +187,8 @@ export default function Peliculas() {
 
   const handleCreate = async (formData) => {
     try {
-      const newMovie = await moviesApi.create(formData)
-      const genre = genres.find(g => g.genre_id === formData.genre_id)
-      
-      // Sincronizamos la lista local inyectando el nombre del género correspondiente
-      setMovies([...movies, { ...newMovie, genre_name: genre?.name }])
+      await moviesApi.create(formData)
+      fetchData()
       setIsModalOpen(false)
       success('Película creada exitosamente')
     } catch (err) {
@@ -168,13 +199,7 @@ export default function Peliculas() {
   const handleUpdate = async (formData) => {
     try {
       await moviesApi.update(editingMovie.movie_id, formData)
-      const genre = genres.find(g => g.genre_id === formData.genre_id)
-      
-      setMovies(movies.map(m => 
-        m.movie_id === editingMovie.movie_id 
-          ? { ...m, ...formData, genre_name: genre?.name }
-          : m
-      ))
+      fetchData()
       setIsModalOpen(false)
       setEditingMovie(null)
       success('Película actualizada exitosamente')
@@ -187,51 +212,60 @@ export default function Peliculas() {
     if (!confirm('¿Está seguro de eliminar esta película?')) return
     try {
       await moviesApi.delete(id)
-      setMovies(movies.filter(m => m.movie_id !== id))
+      fetchData()
       success('Película eliminada exitosamente')
     } catch (err) {
       error(err.message || 'Error al eliminar película')
     }
   }
 
-  // Helper dinámico para resolver nombres de género si el backend sólo entrega ids en el GET lineal
   const resolveGenreName = (movie) => {
     if (movie.genre_name) return movie.genre_name
     const matched = genres.find(g => g.genre_id === movie.genre_id)
     return matched ? matched.name : 'Sin Género'
   }
 
-  const filteredMovies = movies.filter(movie => {
-    const genreName = resolveGenreName(movie)
-    return `${movie.title} ${movie.director} ${genreName}`.toLowerCase().includes(searchTerm.toLowerCase())
-  })
-
-  const statusColors = {
-    'Activa': 'bg-emerald-100 text-emerald-700',
-    'Próximamente': 'bg-amber-100 text-amber-700',
-    'Inactiva': 'bg-slate-100 text-slate-600'
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value)
+    setPage(1)
   }
 
-  if (loading) {
+  const handleGenreChange = (e) => {
+    setSelectedGenre(e.target.value)
+    setPage(1)
+  }
+
+  const handleStatusChange = (e) => {
+    setSelectedStatus(e.target.value)
+    setPage(1)
+  }
+
+  const statusColors = {
+    'Activa': 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50',
+    'Próximamente': 'bg-amber-950/40 text-amber-400 border border-amber-900/50',
+    'Inactiva': 'bg-slate-900/40 text-slate-400 border border-slate-800/50'
+  }
+
+  if (loading && movies.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-slate-100">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Películas</h1>
-          <p className="text-slate-500">Catálogo de películas en cartelera</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Películas</h1>
+          <p className="text-sm text-slate-400 mt-1">Catálogo de películas en cartelera y programación</p>
         </div>
         {isGerente && (
           <button
             onClick={() => { setEditingMovie(null); setIsModalOpen(true) }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white rounded-xl shadow-lg shadow-blue-500/10 active:scale-[0.98] transition-all font-semibold"
           >
             <Plus className="w-5 h-5" />
             Nueva Película
@@ -239,83 +273,142 @@ export default function Peliculas() {
         )}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Buscar por título, director o género..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+      {/* Search & Filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-3 w-5 h-5 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Buscar por título, director..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+          />
+        </div>
+
+        <div className="flex gap-4">
+          <select
+            value={selectedGenre}
+            onChange={handleGenreChange}
+            className="px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer min-w-[150px]"
+          >
+            <option value="">Todos los géneros</option>
+            {genres.map(genre => (
+              <option key={genre.genre_id} value={genre.genre_id}>{genre.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedStatus}
+            onChange={handleStatusChange}
+            className="px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer min-w-[150px]"
+          >
+            <option value="todos">Todos los estados</option>
+            <option value="Activa">Activas</option>
+            <option value="Próximamente">Próximamente</option>
+            <option value="Inactiva">Inactivas</option>
+          </select>
+        </div>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredMovies.map(movie => (
-          <div key={movie.movie_id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden group flex flex-col justify-between">
-            <div>
-              {/* Contenedor de la Imagen / Póster Real */}
-              <div className="aspect-[2/3] bg-slate-900 relative overflow-hidden">
-                {movie.poster_url && !movie.poster_url.includes('placeholder') ? (
-                  <img 
-                    src={movie.poster_url} 
-                    alt={movie.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { e.target.src = '' }} // Evita iconos rotos de imagen si la URL falla
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-                    <span className="text-4xl font-bold text-slate-500 uppercase">{movie.title?.[0] || '?'}</span>
-                  </div>
-                )}
-                
-                {isGerente && (
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      onClick={() => { setEditingMovie(movie); setIsModalOpen(true) }}
-                      className="p-2 bg-white/95 rounded-lg hover:bg-white shadow-sm transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4 text-slate-700" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(movie.movie_id)}
-                      className="p-2 bg-white/95 rounded-lg hover:bg-white shadow-sm transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
-                )}
-                <span className={`absolute bottom-2 left-2 px-2 py-1 rounded text-xs font-semibold shadow-sm ${statusColors[movie.status] || 'bg-slate-100'}`}>
-                  {movie.status}
-                </span>
-              </div>
+      {movies.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {movies.map(movie => (
+            <div key={movie.movie_id} className="bg-slate-900 rounded-2xl border border-slate-800/80 overflow-hidden group flex flex-col justify-between transition-all hover:border-slate-700/60 shadow-lg">
+              <div>
+                {/* Contenedor de la Imagen / Póster Real */}
+                <div className="aspect-[2/3] bg-slate-950 relative overflow-hidden">
+                  {movie.poster_url && !movie.poster_url.includes('placeholder') && movie.poster_url !== 'null' ? (
+                    <img 
+                      src={movie.poster_url} 
+                      alt={movie.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => { e.target.src = '' }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
+                      <span className="text-4xl font-extrabold text-slate-700 uppercase">{movie.title?.[0] || '?'}</span>
+                    </div>
+                  )}
+                  
+                  {isGerente && (
+                    <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button
+                        onClick={() => { setEditingMovie(movie); setIsModalOpen(true) }}
+                        className="p-2 bg-slate-900/90 backdrop-blur-sm border border-slate-800 rounded-lg hover:bg-slate-800 hover:border-slate-700 shadow-sm transition-colors text-slate-300 hover:text-white"
+                        title="Editar película"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(movie.movie_id)}
+                        className="p-2 bg-red-950/80 backdrop-blur-sm border border-red-900/40 rounded-lg hover:bg-red-900 hover:border-red-800 shadow-sm transition-colors text-red-400 hover:text-white"
+                        title="Eliminar película"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <span className={`absolute bottom-3 left-3 px-2 py-1 rounded-md text-xs font-bold shadow-sm ${statusColors[movie.status] || 'bg-slate-800 text-slate-400'}`}>
+                    {movie.status}
+                  </span>
+                </div>
 
-              {/* Detalles */}
-              <div className="p-4">
-                <h3 className="font-semibold text-slate-800 mb-1 line-clamp-1" title={movie.title}>{movie.title}</h3>
-                <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
-                  <User className="w-4 h-4 shrink-0" />
-                  <span className="line-clamp-1">{movie.director}</span>
+                {/* Detalles */}
+                <div className="p-4">
+                  <h3 className="font-bold text-white text-lg mb-1.5 line-clamp-1" title={movie.title}>{movie.title}</h3>
+                  <div className="flex items-center gap-2 text-sm text-slate-400 mb-3">
+                    <User className="w-4 h-4 shrink-0 text-slate-500" />
+                    <span className="line-clamp-1">{movie.director}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Footer de la tarjeta */}
-            <div className="px-4 pb-4 pt-0 border-t border-slate-50 mt-auto">
-              <div className="flex items-center justify-between text-sm pt-3">
-                <span className="text-slate-400 font-medium">{resolveGenreName(movie)}</span>
-                <span className="flex items-center gap-1 text-slate-500 font-medium">
-                  <Clock className="w-4 h-4 text-slate-400" />
-                  {movie.duration} min
-                </span>
+              {/* Footer de la tarjeta */}
+              <div className="px-4 pb-4 pt-0 border-t border-slate-800/60 mt-auto">
+                <div className="flex items-center justify-between text-xs pt-3">
+                  <span className="text-slate-400 font-semibold bg-slate-950 px-2 py-1 rounded-md">{resolveGenreName(movie)}</span>
+                  <span className="flex items-center gap-1 text-slate-400 font-medium">
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    {movie.duration} min
+                  </span>
+                </div>
               </div>
-            </div>
 
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-slate-900/40 border border-slate-800 border-dashed rounded-2xl">
+          <p className="text-slate-400">No se encontraron películas para los criterios de búsqueda especificados.</p>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-800/60 text-slate-400 mt-6">
+          <p className="text-sm">
+            Mostrando página <span className="font-semibold text-white">{page}</span> de <span className="font-semibold text-white">{totalPages}</span> ({total} películas en total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              disabled={page === 1}
+              className="px-4 py-2 bg-slate-900 border border-slate-800/80 rounded-xl hover:text-white hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors text-sm font-medium"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-slate-900 border border-slate-800/80 rounded-xl hover:text-white hover:border-slate-700 disabled:opacity-40 disabled:pointer-events-none transition-colors text-sm font-medium"
+            >
+              Siguiente
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
@@ -323,7 +416,6 @@ export default function Peliculas() {
         onClose={() => { setIsModalOpen(false); setEditingMovie(null) }}
         title={editingMovie ? 'Editar Película' : 'Nueva Película'}
       >
-        {/* Usamos el ID o un string estático como KEY para obligar al formulario a reinicializarse por completo al cambiar de película */}
         <MovieForm
           key={editingMovie ? `edit-${editingMovie.movie_id}` : 'new-movie'}
           movie={editingMovie}

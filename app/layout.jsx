@@ -23,7 +23,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
-      <body className="font-sans antialiased bg-slate-50 dark:bg-slate-900">
+      <body className="font-sans antialiased bg-background text-foreground">
         <AuthProvider>
           <ThemeProvider>
             <ToastProvider>

@@ -12,7 +12,7 @@ import {
 import { useState } from 'react'
 
 export function Header() {
-  const { user, isGerente } = useAuth()
+  const { user, isGerente, logout } = useAuth()
   const { isDarkMode, toggleTheme } = useTheme()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
@@ -85,8 +85,8 @@ export function Header() {
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-sm font-medium text-slate-800 dark:text-white">{user.first_name} {user.last_name}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{user.role}</p>
+              <p className="text-sm font-medium text-slate-800 dark:text-white">{user?.first_name || ''} {user?.last_name || ''}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role || ''}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-slate-500 dark:text-slate-400" />
           </button>
@@ -101,7 +101,10 @@ export function Header() {
                   Configuración
                 </button>
                 <hr className="my-1 border-slate-200 dark:border-slate-700" />
-                <button className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                <button 
+                  onClick={logout}
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                >
                   Cerrar Sesión
                 </button>
               </div>

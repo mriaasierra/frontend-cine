@@ -6,16 +6,23 @@ import { useAuth } from '@/src/context/AuthContext'
 
 export default function Home() {
   const router = useRouter()
-  const { isGerente } = useAuth()
+  const { user, loading, isGerente } = useAuth()
 
   useEffect(() => {
+    if (loading) return
+
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
     // Redirect based on role
     if (isGerente) {
       router.push('/admin/dashboard')
     } else {
       router.push('/empleado/pos')
     }
-  }, [isGerente, router])
+  }, [user, loading, isGerente, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">

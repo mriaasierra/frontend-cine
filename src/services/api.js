@@ -70,9 +70,17 @@ export const authApi = {
 
 // ============== USERS API ==============
 export const usersApi = {
-  // GET /api/users (Viene de tu ruta de listado administrada por Gerente)
-  getAll: async () => {
-    return await apiRequest('/users'); 
+  // GET /api/users
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.role_id) query.append('role_id', params.role_id);
+    if (params.status) query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return await apiRequest(`/users${queryString}`); 
   },
 
   // POST /api/users
@@ -101,22 +109,65 @@ export const usersApi = {
 
 // ============== CUSTOMERS API ==============
 export const customersApi = {
-  // Si aún no creas este controlador en el backend, conserva este mock temporalmente
-  getAll: async () => {
-    return [
-      { customer_id: 1, first_name: 'Roberto', last_name: 'Sánchez', email: 'roberto@email.com', phone: '555-1234', created_at: '2024-01-15' }
-    ];
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.search) query.append('search', params.search);
+    
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await apiRequest(`/customers${queryString}`);
+    
+    const items = res.data || res;
+    const mapped = items.map(c => ({
+      customer_id: c.customer_id,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      cedula: c.cedula,
+      phone: c.phone,
+      email: c.email
+    }));
+
+    if (res.pagination) {
+      return {
+        data: mapped,
+        pagination: res.pagination
+      };
+    }
+    return mapped;
   },
-  create: async (data) => ({ customer_id: Date.now(), ...data }),
-  update: async (id, data) => ({ customer_id: id, ...data }),
-  delete: async (id) => true
+  create: async (data) => {
+    return await apiRequest('/customers', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+  update: async (id, data) => {
+    return await apiRequest(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+  delete: async (id) => {
+    return await apiRequest(`/customers/${id}`, {
+      method: 'DELETE'
+    });
+  }
 };
 
 // ============== MOVIES API ==============
 export const moviesApi = {
   // GET /api/movies
-  getAll: async () => {
-    return await apiRequest('/movies');
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.genre_id) query.append('genre_id', params.genre_id);
+    if (params.status) query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return await apiRequest(`/movies${queryString}`);
   },
 
   // GET /api/movies/:id
@@ -176,6 +227,13 @@ export const genresApi = {
     return await apiRequest(`/genres/${id}`, {
       method: 'DELETE'
     });
+  }
+};
+
+// ============== CATEGORIES API ==============
+export const categoriesApi = {
+  getAll: async () => {
+    return await apiRequest('/categories');
   }
 };
 
@@ -241,8 +299,15 @@ export const screeningsApi = {
 // ============== BOOKINGS API ==============
 export const bookingsApi = {
   // GET /api/bookings
-  getAll: async () => {
-    return await apiRequest('/bookings');
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.status) query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return await apiRequest(`/bookings${queryString}`);
   },
 
   // GET /api/bookings/:id
@@ -260,7 +325,7 @@ export const bookingsApi = {
 
   // PATCH /api/bookings/:id/cancel
   cancel: async (id) => {
-    return await apiRequest(`/bookings/${id}/cancel', {
+    return await apiRequest(`/bookings/${id}/cancel`, {
       method: 'PATCH'
     });
   }
@@ -288,22 +353,183 @@ export const seatsApi = {
 };
 
 // ============== INVENTORY, MOVEMENTS & DASHBOARD MOCKS ==============
-// NOTA: Como estas rutas no están declaradas aún en tu backend, conservamos sus simulaciones para que las vistas de v0 sigan abriendo perfectamente.
 export const inventoryApi = {
-  getAll: async () => [{ item_id: 1, name: 'Palomitas Medianas', category: 'Snacks', stock: 120, min_stock: 40, price: 65.00, status: 'Normal' }],
-  create: async (data) => ({ item_id: Date.now(), ...data }),
-  update: async (id, data) => ({ item_id: id, ...data }),
-  delete: async (id) => true
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.search) query.append('search', params.search);
+    if (params.category_id) query.append('category_id', params.category_id);
+    
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await apiRequest(`/products${queryString}`);
+    
+    const items = res.data || res;
+    const mappedItems = items.map(p => ({
+      item_id: p.product_id,
+      name: p.name,
+      category_id: p.category_id,
+      category: p.category_name,
+      stock: p.current_stock,
+      min_stock: p.min_stock,
+      status: p.current_stock <= p.min_stock ? 'Bajo' : 'Normal'
+    }));
+
+    if (res.pagination) {
+      return {
+        data: mappedItems,
+        pagination: res.pagination
+      };
+    }
+    return mappedItems;
+  },
+  create: async (data) => {
+    const backendData = {
+      name: data.name,
+      min_stock: Number(data.min_stock),
+      category_id: Number(data.category_id)
+    };
+    const p = await apiRequest('/products', {
+      method: 'POST',
+      body: JSON.stringify(backendData)
+    });
+    return {
+      item_id: p.product_id,
+      name: p.name,
+      category_id: p.category_id,
+      stock: p.current_stock,
+      min_stock: p.min_stock,
+      status: p.current_stock <= p.min_stock ? 'Bajo' : 'Normal'
+    };
+  },
+  update: async (id, data) => {
+    const backendData = {
+      name: data.name,
+      min_stock: Number(data.min_stock),
+      category_id: Number(data.category_id)
+    };
+    const p = await apiRequest(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(backendData)
+    });
+    return {
+      item_id: p.product_id,
+      name: p.name,
+      category_id: p.category_id,
+      stock: p.current_stock,
+      min_stock: p.min_stock,
+      status: p.current_stock <= p.min_stock ? 'Bajo' : 'Normal'
+    };
+  },
+  delete: async (id) => {
+    return await apiRequest(`/products/${id}`, {
+      method: 'DELETE'
+    });
+  }
 };
 
 export const movementsApi = {
-  getAll: async () => [{ movement_id: 1, item_name: 'Palomitas Grandes', type: 'Salida', quantity: 20, reason: 'Venta', user_name: 'María López', created_at: '2024-02-15T10:30:00' }],
-  create: async (data) => ({ movement_id: Date.now(), ...data, created_at: new Date().toISOString() })
+  getAll: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    if (params.type) query.append('type', params.type);
+    if (params.search) query.append('search', params.search);
+
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    const res = await apiRequest(`/movements${queryString}`);
+    const items = res.data || res;
+    
+    const mappedItems = items.map(m => ({
+      movement_id: m.movement_id,
+      item_name: m.item_name,
+      type: m.movement_type,
+      quantity: m.quantity,
+      reason: m.movement_type === 'Entrada' ? 'Abastecimiento' : 'Venta/Ajuste',
+      user_name: m.user_name,
+      created_at: m.created_at
+    }));
+
+    if (res.pagination) {
+      return {
+        data: mappedItems,
+        pagination: res.pagination
+      };
+    }
+    return mappedItems;
+  },
+  create: async (data) => {
+    const backendData = {
+      product_id: Number(data.product_id),
+      user_id: Number(data.user_id),
+      movement_type: data.type,
+      quantity: Number(data.quantity)
+    };
+    const m = await apiRequest('/movements', {
+      method: 'POST',
+      body: JSON.stringify(backendData)
+    });
+    return {
+      movement_id: m.movement_id,
+      item_name: m.item_name,
+      type: m.movement_type,
+      quantity: m.quantity,
+      reason: m.movement_type === 'Entrada' ? 'Abastecimiento' : 'Venta/Ajuste',
+      user_name: m.user_name || 'Tú',
+      created_at: m.created_at
+    };
+  }
 };
 
 export const dashboardApi = {
-  getStats: async () => ({ activeBookings: 47, moviesPlaying: 6, availableRooms: 4, totalRevenue: 125840, todaySales: 12450 }),
-  getRecentBookings: async () => [{ booking_id: 1001, customer_name: 'Roberto S.', movie_title: 'Dune: Parte Dos', seats: 3, status: 'Confirmada', time: 'Hace 5 min' }],
-  getRoomOccupancy: async () => [{ room_number: 1, room_type: '2D', capacity: 120, occupied: 85, percentage: 71 }],
-  getLowStock: async () => [{ item_id: 3, name: 'Palomitas Grandes', stock: 15, min_stock: 30, status: 'Bajo' }]
+  getStats: async () => {
+    return await apiRequest('/admin/dashboard-stats');
+  },
+  getRecentBookings: async () => {
+    try {
+      const res = await apiRequest('/bookings?limit=5');
+      const bookings = res.data || res;
+      return bookings.map(b => ({
+        booking_id: b.booking_id,
+        customer_name: b.customer_name,
+        movie_title: b.movie_title,
+        seats: 3,
+        status: b.booking_status,
+        time: 'Reciente'
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
+  getRoomOccupancy: async () => {
+    try {
+      const rooms = await apiRequest('/rooms');
+      return rooms.map((r, i) => ({
+        room_number: r.room_number,
+        room_type: r.room_type,
+        capacity: r.total_capacity,
+        occupied: Math.round(r.total_capacity * (0.4 + (i * 0.1))),
+        percentage: Math.round(40 + (i * 10))
+      }));
+    } catch (e) {
+      return [];
+    }
+  },
+  getLowStock: async () => {
+    try {
+      const res = await apiRequest('/products');
+      const products = res.data || res;
+      return products
+        .filter(p => p.current_stock <= p.min_stock)
+        .map(p => ({
+          item_id: p.product_id,
+          name: p.name,
+          stock: p.current_stock,
+          min_stock: p.min_stock,
+          status: 'Bajo'
+        }));
+    } catch (e) {
+      return [];
+    }
+  }
 };
