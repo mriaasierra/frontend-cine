@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/src/context/AuthContext'
 import { ToastProvider } from '@/src/context/ToastContext'
 import { ThemeProvider } from '@/src/context/ThemeContext'
+import { SocketProvider } from '@/src/context/SocketContext'
 
 const geistSans = Geist({ 
   subsets: ['latin'],
@@ -25,11 +26,13 @@ export default function RootLayout({ children }) {
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground">
         <AuthProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              {children}
-            </ToastProvider>
-          </ThemeProvider>
+          <SocketProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </ThemeProvider>
+          </SocketProvider>
         </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

@@ -489,14 +489,18 @@ export const dashboardApi = {
     try {
       const res = await apiRequest('/bookings?limit=5');
       const bookings = res.data || res;
-      return bookings.map(b => ({
-        booking_id: b.booking_id,
-        customer_name: b.customer_name,
-        movie_title: b.movie_title,
-        seats: 3,
-        status: b.booking_status,
-        time: 'Reciente'
-      }));
+      return bookings.map(b => {
+        const createdDate = new Date(b.created_at);
+        const timeStr = isNaN(createdDate.getTime()) ? 'Reciente' : createdDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return {
+          booking_id: b.booking_id,
+          customer_name: b.customer_name,
+          movie_title: b.movie_title,
+          seats: Number(b.seats_count) || 1,
+          status: b.booking_status,
+          time: timeStr
+        };
+      });
     } catch (e) {
       return [];
     }
@@ -504,13 +508,18 @@ export const dashboardApi = {
   getRoomOccupancy: async () => {
     try {
       const rooms = await apiRequest('/rooms');
-      return rooms.map((r, i) => ({
-        room_number: r.room_number,
-        room_type: r.room_type,
-        capacity: r.total_capacity,
-        occupied: Math.round(r.total_capacity * (0.4 + (i * 0.1))),
-        percentage: Math.round(40 + (i * 10))
-      }));
+      return rooms.map(r => {
+        const occupied = Number(r.occupied_seats) || 0;
+        const capacity = Number(r.total_capacity) || 1;
+        const percentage = Math.min(100, Math.round((occupied / capacity) * 100));
+        return {
+          room_number: r.room_number,
+          room_type: r.room_type,
+          capacity: capacity,
+          occupied: occupied,
+          percentage: percentage
+        };
+      });
     } catch (e) {
       return [];
     }

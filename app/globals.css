@@ -40,7 +40,7 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   
-  /* Mapping standard Tailwind colors to Dark Cinematic Gold theme */
+  /* Mapping standard Tailwind colors to Dark Cinematic Gold theme dynamically */
   --color-blue-50: oklch(0.95 0.02 85);
   --color-blue-100: oklch(0.9 0.04 85);
   --color-blue-200: oklch(0.86 0.08 85);
@@ -61,19 +61,20 @@
   --color-violet-900: oklch(0.25 0.05 85);
   --color-violet-950: oklch(0.14 0.02 85);
 
-  --color-slate-50: oklch(0.12 0.01 280); /* Body background */
-  --color-slate-100: oklch(0.14 0.01 280);
-  --color-slate-200: oklch(0.2 0.01 280);
-  --color-slate-300: oklch(0.35 0.01 280);
-  --color-slate-400: oklch(0.65 0 0);
-  --color-slate-500: oklch(0.55 0 0);
-  --color-slate-600: oklch(0.45 0 0);
-  --color-slate-700: oklch(0.35 0.01 280);
-  --color-slate-750: oklch(0.25 0.01 280);
-  --color-slate-800: oklch(0.28 0.01 280); /* borders */
-  --color-slate-850: oklch(0.20 0.01 280);
-  --color-slate-900: oklch(0.16 0.01 280); /* cards background */
-  --color-slate-950: oklch(0.12 0.01 280); /* background */
+  /* Redefining slate colors based on custom CSS variables */
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-750: var(--slate-750);
+  --color-slate-800: var(--slate-800);
+  --color-slate-850: var(--slate-850);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -85,51 +86,79 @@
 }
 
 :root {
-  --background: oklch(0.12 0.01 280);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.16 0.01 280);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.14 0.01 280);
-  --popover-foreground: oklch(0.95 0 0);
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-750: #1e293b;
+  --slate-800: #1e293b;
+  --slate-850: #0f172a;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
   
   /* Gold/Premium Accents */
-  --primary: oklch(0.78 0.14 85);
-  --primary-foreground: oklch(0.12 0.01 280);
+  --primary: oklch(0.72 0.13 85);
+  --primary-foreground: #ffffff;
   
-  --secondary: oklch(0.22 0.01 280);
-  --secondary-foreground: oklch(0.9 0 0);
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
   
-  --muted: oklch(0.2 0.01 280);
-  --muted-foreground: oklch(0.65 0 0);
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
   
-  --accent: oklch(0.72 0.12 85);
-  --accent-foreground: oklch(0.12 0.01 280);
+  --accent: oklch(0.72 0.13 85);
+  --accent-foreground: #ffffff;
   
   --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.95 0 0);
+  --destructive-foreground: #ffffff;
   
-  --border: oklch(0.28 0.01 280);
-  --input: oklch(0.2 0.01 280);
-  --ring: oklch(0.78 0.14 85);
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: oklch(0.72 0.13 85);
   
-  --chart-1: oklch(0.78 0.14 85);
+  --chart-1: oklch(0.72 0.13 85);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
   
-  --sidebar: oklch(0.12 0.01 280);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.78 0.14 85);
-  --sidebar-primary-foreground: oklch(0.12 0.01 280);
-  --sidebar-accent: oklch(0.16 0.01 280);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.28 0.01 280);
-  --sidebar-ring: oklch(0.78 0.14 85);
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: oklch(0.72 0.13 85);
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: oklch(0.72 0.13 85);
 }
 
 .dark {
+  --slate-50: oklch(0.12 0.01 280); /* Dark body background */
+  --slate-100: oklch(0.14 0.01 280);
+  --slate-200: oklch(0.2 0.01 280);
+  --slate-300: oklch(0.35 0.01 280);
+  --slate-400: oklch(0.65 0 0);
+  --slate-500: oklch(0.55 0 0);
+  --slate-600: oklch(0.45 0 0);
+  --slate-700: oklch(0.35 0.01 280);
+  --slate-750: oklch(0.25 0.01 280);
+  --slate-800: oklch(0.28 0.01 280); /* borders */
+  --slate-850: oklch(0.20 0.01 280);
+  --slate-900: oklch(0.16 0.01 280); /* cards background */
+  --slate-950: oklch(0.12 0.01 280); /* background */
+
   --background: oklch(0.12 0.01 280);
   --foreground: oklch(0.95 0 0);
   --card: oklch(0.16 0.01 280);

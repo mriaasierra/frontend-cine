@@ -34,27 +34,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleQuickLogin = async (quickEmail, quickPassword) => {
-    setEmail(quickEmail)
-    setPassword(quickPassword)
-    setError('')
-    setLoading(true)
-
-    try {
-      const user = await login(quickEmail, quickPassword)
-      if (user.role === 'GERENTE') {
-        router.push('/admin/dashboard')
-      } else {
-        router.push('/empleado/pos')
-      }
-    } catch (err) {
-      console.error(err)
-      setError(err.message || 'Error al iniciar sesión rápida.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 relative overflow-hidden">
       {/* Background patterns */}
@@ -131,29 +110,6 @@ export default function LoginPage() {
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
-
-        {/* Quick Logins for Testing */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80">
-          <p className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
-            Accesos Rápidos (Demo)
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleQuickLogin('gerente@cinelux.com', 'admin123')}
-              disabled={loading}
-              className="py-2.5 px-3 bg-slate-950/40 hover:bg-slate-950 border border-slate-800/60 rounded-xl text-xs font-medium text-slate-300 hover:text-white transition-all text-center hover:border-blue-500/40"
-            >
-              💼 Rol Gerente
-            </button>
-            <button
-              onClick={() => handleQuickLogin('empleado@cinelux.com', 'admin123')}
-              disabled={loading}
-              className="py-2.5 px-3 bg-slate-950/40 hover:bg-slate-950 border border-slate-800/60 rounded-xl text-xs font-medium text-slate-300 hover:text-white transition-all text-center hover:border-violet-500/40"
-            >
-              🍿 Rol Empleado
-            </button>
-          </div>
-        </div>
 
       </div>
     </div>
