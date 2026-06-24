@@ -9,8 +9,12 @@ export function SocketProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    // Definimos la URL de websocket. Si es en producción (Vercel) podemos adaptarlo
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:5000'
+    // Definimos la URL de websocket. Si está alojado, la derivamos de la URL de API de forma segura.
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL
+    if (!wsUrl) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+      wsUrl = apiUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
+    }
     const ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
