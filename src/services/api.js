@@ -59,12 +59,22 @@ export const authApi = {
   getProfile: async () => {
     const data = await apiRequest('/auth/me');
     return {
-      user_id: data.id,
-      first_name: data.name.split(' ')[0] || '',
-      last_name: data.name.split(' ')[1] || '',
+      user_id: data.user_id || data.id,
+      first_name: data.first_name || (data.name ? data.name.split(' ')[0] : ''),
+      last_name: data.last_name || (data.name ? data.name.split(' ').slice(1).join(' ') : ''),
       email: data.email,
-      role_name: data.role.toUpperCase()
+      role_name: (data.role_name || data.role || '').toUpperCase(),
+      status: data.status || 'Activo',
+      profile_photo: data.profile_photo || null,
     };
+  },
+
+  // PUT /api/auth/me
+  updateProfile: async (profileData) => {
+    return await apiRequest('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    });
   }
 };
 

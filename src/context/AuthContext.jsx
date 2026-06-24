@@ -27,7 +27,8 @@ export function AuthProvider({ children }) {
           last_name: perfil.last_name,
           email: perfil.email,
           role: perfil.role_name, // Viene normalizado en MAYÚSCULAS desde api.js
-          status: 'Activo'
+          status: perfil.status || 'Activo',
+          profile_photo: perfil.profile_photo || null
         })
       } catch (error) {
         console.error('Sesión expirada o token inválido:', error)

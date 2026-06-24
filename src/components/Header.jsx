@@ -7,13 +7,17 @@ import {
   User, 
   ChevronDown,
   Sun,
-  Moon
+  Moon,
+  Settings,
+  UserCircle
 } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
   const { user, isGerente, logout } = useAuth()
   const { isDarkMode, toggleTheme } = useTheme()
+  const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
 
@@ -81,8 +85,12 @@ export function Header() {
             onClick={() => setShowProfile(!showProfile)}
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            <div className="w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-slate-700 dark:bg-slate-600 rounded-full flex items-center justify-center overflow-hidden">
+              {user?.profile_photo ? (
+                <img src={user.profile_photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-4 h-4 text-white" />
+              )}
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-sm font-medium text-slate-800 dark:text-white">{user?.first_name || ''} {user?.last_name || ''}</p>
@@ -94,10 +102,18 @@ export function Header() {
           {showProfile && (
             <div className="absolute right-0 top-14 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 z-50">
               <div className="p-2">
-                <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                <button 
+                  onClick={() => { setShowProfile(false); router.push('/admin/perfil') }}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2"
+                >
+                  <UserCircle className="w-4 h-4" />
                   Mi Perfil
                 </button>
-                <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                <button 
+                  onClick={() => { setShowProfile(false); router.push('/admin/configuracion') }}
+                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
                   Configuración
                 </button>
                 <hr className="my-1 border-slate-200 dark:border-slate-700" />
