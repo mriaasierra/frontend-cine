@@ -64,7 +64,6 @@ export default function DashboardAdmin() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // TODO: Connect to backend endpoints
     const fetchDashboardData = async () => {
       try {
         const [statsData, bookingsData, occupancyData, stockData] = await Promise.all([
@@ -74,10 +73,13 @@ export default function DashboardAdmin() {
           dashboardApi.getLowStock()
         ])
         
-        setStats(statsData)
-        setRecentBookings(bookingsData)
-        setRoomOccupancy(occupancyData)
-        setLowStock(stockData)
+        // Desestructuración limpia si los datos vienen envueltos en un .data
+        const cleanStats = statsData?.data ? statsData.data : statsData;
+        
+        setStats(cleanStats)
+        setRecentBookings(bookingsData || cleanStats?.recentBookings || [])
+        setRoomOccupancy(occupancyData || [])
+        setLowStock(stockData || cleanStats?.lowStockProducts || [])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
@@ -108,26 +110,26 @@ export default function DashboardAdmin() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Reservas Activas" 
-          value={stats?.activeBookings || 0}
+          value={stats?.activeBookings ?? 0}
           icon={CalendarCheck}
           trend="+12% vs ayer"
           color="blue"
         />
         <StatCard 
           title="Películas en Cartelera" 
-          value={stats?.moviesPlaying || 0}
+          value={stats?.moviesPlaying ?? 0}
           icon={Film}
           color="emerald"
         />
         <StatCard 
           title="Salas Disponibles" 
-          value={stats?.availableRooms || 0}
+          value={stats?.availableRooms ?? 0}
           icon={DoorOpen}
           color="amber"
         />
         <StatCard 
           title="Ventas del Día" 
-          value={`$${(stats?.todaySales || 0).toLocaleString()}`}
+          value={`$${(stats?.todaySales ?? 0).toLocaleString()}`}
           icon={TrendingUp}
           trend="+8% vs ayer"
           color="purple"
@@ -136,7 +138,7 @@ export default function DashboardAdmin() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Bookings - Takes 2 columns */}
+        {/* Recent Bookings */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="p-4 border-b border-slate-200 dark:border-slate-700">
             <h2 className="font-semibold text-slate-800 dark:text-white flex items-center gap-2">
@@ -151,20 +153,16 @@ export default function DashboardAdmin() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Cliente</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Película</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Asientos</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Tiempo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                {recentBookings.map(booking => (
-                  <tr key={booking.booking_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                {recentBookings.map((booking, index) => (
+                  <tr key={booking.booking_id || index} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                     <td className="px-4 py-3 text-sm font-mono text-slate-600 dark:text-slate-300">#{booking.booking_id}</td>
                     <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-200">{booking.customer_name}</td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{booking.movie_title}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{booking.seats}</td>
                     <td className="px-4 py-3"><StatusBadge status={booking.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">{booking.time}</td>
                   </tr>
                 ))}
               </tbody>
@@ -181,8 +179,8 @@ export default function DashboardAdmin() {
             </h2>
           </div>
           <div className="p-4 space-y-4">
-            {roomOccupancy.map(room => (
-              <div key={room.room_number}>
+            {roomOccupancy.map((room, idx) => (
+              <div key={room.room_number || idx}>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Sala {room.room_number} <span className="text-slate-400 dark:text-slate-500">({room.room_type})</span>
@@ -214,37 +212,23 @@ export default function DashboardAdmin() {
         </div>
         <div className="p-4">
           {lowStock.length === 0 ? (
-            <p className="text-slate-500 dark:text-slate-400 text-center py-4">No hay alertas de stock</p>
+            <p className="text-slate-500 dark:text-slate-400 text-center py-4">No hay alertas de stock bajo</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {lowStock.map(item => (
+              {lowStock.map((item, idx) => (
                 <div 
-                  key={item.item_id}
-                  className={`p-4 rounded-lg border ${
-                    item.status === 'Crítico' 
-                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                      : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                  }`}
+                  key={item.id || idx}
+                  className="p-4 rounded-lg border bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className={`font-medium ${
-                        item.status === 'Crítico' ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'
-                      }`}>
-                        {item.name}
-                      </p>
-                      <p className={`text-sm ${
-                        item.status === 'Crítico' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
-                      }`}>
-                        Stock: {item.stock} / Mín: {item.min_stock}
+                      <p className="font-medium text-amber-800 dark:text-amber-300">{item.name}</p>
+                      <p className="text-sm text-amber-600 dark:text-amber-400">
+                        Stock: {item.current_stock} / Mín: {item.min_stock}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      item.status === 'Crítico' 
-                        ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200' 
-                        : 'bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200'
-                    }`}>
-                      {item.status}
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200">
+                      Bajo
                     </span>
                   </div>
                 </div>

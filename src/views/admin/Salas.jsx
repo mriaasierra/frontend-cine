@@ -6,6 +6,19 @@ import { roomsApi } from '@/src/services/api'
 import { useToast } from '@/src/context/ToastContext'
 import { Modal } from '@/src/components/ui/Modal'
 
+// Diccionarios de mapeo para sincronizar el Frontend con las restricciones de la Base de Datos
+const dbToFrontStatus = {
+  'disponible': 'Disponible',
+  'ocupada': 'Mantenimiento',
+  'limpieza': 'Fuera de servicio'
+}
+
+const frontToDbStatus = {
+  'Disponible': 'disponible',
+  'Mantenimiento': 'ocupada',
+  'Fuera de servicio': 'limpieza'
+}
+
 function RoomForm({ room, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     room_number: room?.room_number || '',
@@ -60,9 +73,9 @@ function RoomForm({ room, onSubmit, onCancel }) {
             type="number"
             value={formData.total_capacity}
             onChange={(e) => setFormData({ ...formData, total_capacity: e.target.value })}
-            className={`w-full px-3 py-2 bg-slate-955 border rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm ${
+            className={`w-full px-3 py-2 bg-slate-950 border rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all text-sm ${
               errors.total_capacity ? 'border-red-500' : 'border-slate-800'
-            }`.replace('bg-slate-955', 'bg-slate-950')}
+            }`}
             required
           />
           {errors.total_capacity && <p className="text-xs text-red-500 mt-1">{errors.total_capacity}</p>}
@@ -131,7 +144,12 @@ export default function Salas() {
   const fetchRooms = async () => {
     try {
       const data = await roomsApi.getAll()
-      setRooms(data || [])
+      // Traducimos los estados técnicos ('disponible', 'ocupada', 'limpieza') a los nombres estéticos del front
+      const mappedRooms = (data || []).map(room => ({
+        ...room,
+        room_status: dbToFrontStatus[room.room_status] || room.room_status
+      }))
+      setRooms(mappedRooms)
     } catch (err) {
       error('Error al cargar salas')
     } finally {
@@ -141,8 +159,20 @@ export default function Salas() {
 
   const handleCreate = async (formData) => {
     try {
-      const newRoom = await roomsApi.create(formData)
-      setRooms([...rooms, newRoom])
+      // Traducimos el estado al valor exacto en minúsculas que la BD requiere
+      const apiPayload = {
+        ...formData,
+        room_status: frontToDbStatus[formData.room_status] || formData.room_status
+      }
+      const newRoom = await roomsApi.create(apiPayload)
+      
+      // Mapeamos la respuesta técnica de vuelta a la etiqueta visual antes de guardarla en el array local
+      const mappedNewRoom = {
+        ...newRoom,
+        room_status: dbToFrontStatus[newRoom.room_status] || formData.room_status
+      }
+      
+      setRooms([...rooms, mappedNewRoom])
       setIsModalOpen(false)
       success('Sala creada exitosamente')
     } catch (err) {
@@ -152,7 +182,13 @@ export default function Salas() {
 
   const handleUpdate = async (formData) => {
     try {
-      await roomsApi.update(editingRoom.room_id, formData)
+      // Traducimos el estado de la interfaz ('Mantenimiento', etc.) al término técnico de la BD ('ocupada', 'limpieza')
+      const apiPayload = {
+        ...formData,
+        room_status: frontToDbStatus[formData.room_status] || formData.room_status
+      }
+      await roomsApi.update(editingRoom.room_id, apiPayload)
+      
       setRooms(rooms.map(r => r.room_id === editingRoom.room_id ? { ...r, ...formData } : r))
       setIsModalOpen(false)
       setEditingRoom(null)
@@ -307,4 +343,3 @@ export default function Salas() {
     </div>
   )
 }
-
